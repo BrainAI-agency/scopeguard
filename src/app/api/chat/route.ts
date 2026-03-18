@@ -1,10 +1,10 @@
 import {
   streamText,
-  stepCountIs,
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
 } from "ai";
+import { Auth0Interrupt } from "@auth0/ai/interrupts";
 import { bedrock } from "@ai-sdk/amazon-bedrock";
 import { setAIContext } from "@auth0/ai-vercel";
 import {
@@ -28,37 +28,27 @@ export async function POST(req: Request) {
           model: bedrock("us.anthropic.claude-sonnet-4-6"),
           system: `You are ScopeGuard's AI assistant. You help users interact with their connected services (GitHub, Google Calendar, Gmail) through scoped, audited API access.
 
-When using tools:
-- Always tell the user which service and scopes you're about to use
-- Report results clearly and concisely
-- If a tool call fails due to missing permissions, explain what's needed
+IMPORTANT: When a user asks you to do something, ALWAYS call the appropriate tool immediately. Do not explain what you will do first. Do not ask for permission. Just call the tool. The authorization system will handle permissions automatically -- if the user hasn't connected a service yet, a consent prompt will appear for them.
 
-You have access to these tools:
-- listRepos: List the user's GitHub repositories
-- getRepoFiles: Read files from a GitHub repository
-- searchCode: Search code across the user's repositories
-- getCalendarEvents: Get calendar events for a specific date
-- checkAvailability: Check free/busy status for a date
-- getInbox: Get recent emails from Gmail
-- searchEmails: Search Gmail with a query
-
-Every tool call you make is logged in the audit system. The user can review all actions in the Audit Log.`,
+After a tool returns results, summarize them clearly. Every tool call is logged in the audit system.`,
           messages: await convertToModelMessages(messages),
           tools,
-          stopWhen: stepCountIs(5),
-          onFinish: (output) => {
-            if (output.finishReason === "tool-calls") {
-              const lastContent = output.content[output.content.length - 1];
+          maxSteps: 5,
+          onStepFinish: (step) => {
+            // Intercept Token Vault interrupts BEFORE the model sees them as tool errors.
+            // Without this, streamText feeds the error back to the model as a tool-error,
+            // and the model generates a text fallback instead of triggering the consent flow.
+            for (const content of step.content ?? []) {
               if (
-                lastContent &&
-                "type" in lastContent &&
-                lastContent.type === "tool-error"
+                "type" in content &&
+                content.type === "tool-error" &&
+                content.error instanceof Auth0Interrupt
               ) {
                 throw {
-                  cause: lastContent.error,
-                  toolCallId: lastContent.toolCallId,
-                  toolName: lastContent.toolName,
-                  toolArgs: lastContent.input,
+                  cause: content.error,
+                  toolCallId: content.toolCallId,
+                  toolName: content.toolName,
+                  toolArgs: content.input,
                 };
               }
             }

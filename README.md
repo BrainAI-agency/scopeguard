@@ -73,7 +73,7 @@ No tokens are stored in the app. No credentials in the database. Auth0 manages t
 - **Vercel AI SDK v6** -- Streaming chat, tool calling
 - **Claude** (via AWS Bedrock) -- AI model
 - **Tailwind CSS v4** + shadcn/ui -- UI components
-- **SQLite** -- Audit log storage
+- **In-memory audit store** -- Zero external deps, swappable to SQLite/Postgres
 
 ## Features
 
@@ -94,9 +94,9 @@ All tools are **read-only**. The agent cannot modify your data.
 | Tool | Service | Scopes | What It Does |
 |------|---------|--------|-------------|
 | `listRepos` | GitHub | `repo` | List your repositories |
-| `getRepoContents` | GitHub | `repo` | Read files from a repo |
+| `getRepoFiles` | GitHub | `repo` | Read files from a repo |
 | `searchCode` | GitHub | `repo` | Search across your repos |
-| `getEvents` | Google Calendar | `calendar.readonly` | List calendar events |
+| `getCalendarEvents` | Google Calendar | `calendar.readonly` | List calendar events |
 | `checkAvailability` | Google Calendar | `calendar.readonly` | Check free/busy status |
 | `getInbox` | Gmail | `gmail.readonly` | List recent emails |
 | `searchEmails` | Gmail | `gmail.readonly` | Search emails by query |
@@ -175,7 +175,7 @@ src/
     audit-wrapper.ts          # Audit middleware for tools
     scope-metadata.ts         # Human-readable scope descriptions
     tools/                    # AI tool definitions
-    db/                       # SQLite schema + queries
+    db/                       # Audit + connection state
 ```
 
 ## Team
