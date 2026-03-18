@@ -32,44 +32,44 @@ When a user asks you to do something, call the appropriate tool immediately. The
 After a tool returns results, summarize them clearly. Every tool call is logged in the audit system.`,
           messages: await convertToModelMessages(messages),
           tools,
-          onFinish: (output) => {
-            console.log("[DEBUG-FIX] onFinish:", JSON.stringify({
-              finishReason: output.finishReason,
-              contentLen: output.content?.length,
-              contentTypes: output.content?.map((c: any) => c.type),
-              lastErrorType: output.content?.filter((c: any) => c.type === "tool-error").map((c: any) => ({
-                name: c.error?.constructor?.name,
-                isAuth0: c.error instanceof Auth0Interrupt,
-                msg: String(c.error).slice(0, 100),
-              })),
-            }));
-            if (output.finishReason === "tool-calls") {
-              const lastContent = output.content[output.content.length - 1];
-              if (
-                lastContent &&
-                "type" in lastContent &&
-                lastContent.type === "tool-error"
-              ) {
-                const err = (lastContent as any).error;
-                if (err instanceof Auth0Interrupt) {
-                  throw {
-                    cause: err,
-                    toolCallId: (lastContent as any).toolCallId,
-                    toolName: (lastContent as any).toolName,
-                    toolArgs: (lastContent as any).input,
-                  };
-                }
-              }
-            }
-          },
         });
 
+        // Merge stream into writer (starts sending chunks to client)
         writer.merge(result.toUIMessageStream());
+
+        // Await completion, then check for Token Vault interrupts.
+        // This throws AFTER the stream completes, so the error goes to onError.
+        const steps = await result.steps;
+
+        for (const step of steps) {
+          for (const content of step.content) {
+            if ("type" in content && content.type === "tool-error") {
+              const err = (content as any).error;
+              const isAuth0 =
+                err instanceof Auth0Interrupt ||
+                (err &&
+                  String(err.message || err).startsWith(
+                    "AUTH0_AI_INTERRUPT"
+                  ));
+              if (isAuth0) {
+                console.log(
+                  "[ScopeGuard] Token Vault interrupt, throwing for consent flow"
+                );
+                throw {
+                  cause: err,
+                  toolCallId: (content as any).toolCallId,
+                  toolName: (content as any).toolName,
+                  toolArgs: (content as any).input,
+                };
+              }
+            }
+          }
+        }
       },
       { messages, tools }
     ),
     onError: errorSerializer((err) => {
-      console.error("Stream error:", err);
+      console.error("[ScopeGuard] Stream error:", err);
       return "An error occurred while processing your request.";
     }),
   });
