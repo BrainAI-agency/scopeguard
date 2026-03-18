@@ -1,8 +1,15 @@
 import { logAudit } from "./db/audit";
+import { upsertConnection } from "./db/connections";
 import { auth0 } from "./auth0";
 
+// Map connection IDs to display provider names
+const connectionProviders: Record<string, string> = {
+  github: "GitHub",
+  "google-oauth2": "Google",
+};
+
 /**
- * Logs a tool call to the audit system. Call this inside tool execute functions.
+ * Logs a tool call to the audit system and updates connection state.
  * ScopeGuard's core differentiator: full visibility into agent actions.
  */
 export async function auditToolCall(opts: {
@@ -34,4 +41,14 @@ export async function auditToolCall(opts: {
     errorMessage: opts.errorMessage ?? null,
     durationMs: opts.durationMs,
   });
+
+  // On successful tool call, mark the connection as active
+  if (opts.status === "success" && userId !== "anonymous") {
+    await upsertConnection(
+      userId,
+      opts.connection,
+      connectionProviders[opts.connection] ?? opts.connection,
+      opts.scopes
+    );
+  }
 }

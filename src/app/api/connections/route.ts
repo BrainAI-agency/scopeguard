@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
+import { getConnections, revokeConnection } from "@/lib/db/connections";
 
 // Static connection definitions -- what ScopeGuard can connect to.
-// Actual token state comes from Auth0 Token Vault at runtime.
-const CONNECTIONS = [
+const CONNECTION_DEFS = [
   {
     id: "github",
     provider: "GitHub",
@@ -63,5 +63,43 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json({ connections: CONNECTIONS });
+  const userId = session.user.sub;
+  const activeStates = await getConnections(userId);
+
+  // Merge static definitions with live connection state
+  const connections = CONNECTION_DEFS.map((def) => {
+    const state = activeStates.find(
+      (s) => s.connection === def.connection && s.status === "active"
+    );
+    return {
+      ...def,
+      isConnected: !!state,
+      connectedAt: state?.connectedAt ?? null,
+      lastUsedAt: state?.lastUsedAt ?? null,
+      activeScopes: state?.scopes ?? [],
+    };
+  });
+
+  return NextResponse.json({ connections });
+}
+
+export async function DELETE(req: Request) {
+  const session = await auth0.getSession();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { connection } = await req.json();
+  if (!connection) {
+    return NextResponse.json({ error: "Missing connection" }, { status: 400 });
+  }
+
+  const userId = session.user.sub;
+  const revoked = await revokeConnection(userId, connection);
+
+  if (!revoked) {
+    return NextResponse.json({ error: "Connection not found or already revoked" }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true });
 }
