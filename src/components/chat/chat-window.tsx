@@ -2,7 +2,6 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useInterruptions } from "@auth0/ai-vercel/react";
-import { lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 import type { UIMessage } from "ai";
 import { TokenVaultConsent } from "@/components/auth0-ai/TokenVault";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,7 +25,33 @@ export function ChatWindow() {
         onError: handler((e: Error) => {
           console.error("Chat error:", e.message);
         }),
-        sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+        // Custom sendAutomaticallyWhen: only auto-send when tool calls
+        // completed successfully. Do NOT auto-send on tool errors, because
+        // Auth0 Token Vault interrupts arrive as tool-errors and need to
+        // show the consent UI instead of retrying.
+        sendAutomaticallyWhen: ({ messages: msgs }) => {
+          const message = msgs[msgs.length - 1];
+          if (!message || message.role !== "assistant") return false;
+
+          const lastStepStartIndex = message.parts.reduce(
+            (lastIndex: number, part: any, index: number) =>
+              part.type === "step-start" ? index : lastIndex,
+            -1
+          );
+
+          const toolParts = message.parts
+            .slice(lastStepStartIndex + 1)
+            .filter(
+              (part: any) =>
+                part.type === "tool-invocation" || part.type === "tool-result"
+            );
+
+          // Must have tool parts, all must be output-available (not output-error)
+          return (
+            toolParts.length > 0 &&
+            toolParts.every((part: any) => part.state === "output-available")
+          );
+        },
       })
   );
 
