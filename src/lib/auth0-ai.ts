@@ -9,14 +9,16 @@ const auth0AI = new Auth0AI({
   },
 });
 
+async function getRefreshToken() {
+  const session = await auth0.getSession();
+  return session?.tokenSet.refreshToken ?? "";
+}
+
 // Token Vault connection wrappers
 export const withGitHubConnection = auth0AI.withTokenVault({
   connection: "github",
   scopes: ["read:user", "repo"],
-  refreshToken: async () => {
-    const session = await auth0.getSession();
-    return session?.tokenSet.refreshToken ?? "";
-  },
+  refreshToken: getRefreshToken,
 });
 
 export const withGoogleCalendarConnection = auth0AI.withTokenVault({
@@ -25,10 +27,7 @@ export const withGoogleCalendarConnection = auth0AI.withTokenVault({
     "openid",
     "https://www.googleapis.com/auth/calendar.readonly",
   ],
-  refreshToken: async () => {
-    const session = await auth0.getSession();
-    return session?.tokenSet.refreshToken ?? "";
-  },
+  refreshToken: getRefreshToken,
 });
 
 export const withGmailConnection = auth0AI.withTokenVault({
@@ -37,10 +36,7 @@ export const withGmailConnection = auth0AI.withTokenVault({
     "openid",
     "https://www.googleapis.com/auth/gmail.readonly",
   ],
-  refreshToken: async () => {
-    const session = await auth0.getSession();
-    return session?.tokenSet.refreshToken ?? "";
-  },
+  refreshToken: getRefreshToken,
 });
 
 export const getAccessToken = async () => getAccessTokenFromTokenVault();
