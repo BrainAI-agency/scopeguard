@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     execute: withInterruptions(
       async ({ writer }) => {
         const result = streamText({
-          model: bedrock("us.anthropic.claude-sonnet-4-6-v1"),
+          model: bedrock("us.anthropic.claude-sonnet-4-6"),
           system: `You are ScopeGuard's AI assistant. You help users interact with their connected services (GitHub, Google Calendar, Gmail) through scoped, audited API access.
 
 When using tools:

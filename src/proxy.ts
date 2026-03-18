@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ["/dashboard", "/chat", "/audit", "/connect", "/api/audit", "/api/connections"];
+const PROTECTED_ROUTES = ["/dashboard", "/chat", "/audit", "/connect", "/api/audit", "/api/connections", "/api/chat"];
 
 export async function proxy(request: NextRequest) {
   // Let Auth0 handle its own routes (/auth/*)
