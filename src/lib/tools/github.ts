@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod/v3";
 import { Octokit } from "@octokit/rest";
+import { TokenVaultError } from "@auth0/ai/interrupts";
 import { getAccessToken, withGitHubConnection } from "../auth0-ai";
 import { auditToolCall } from "../audit-wrapper";
 
@@ -55,7 +56,7 @@ export const listReposTool = withGitHubConnection(
         });
 
         return result;
-      } catch (error) {
+      } catch (error: any) {
         await auditToolCall({
           toolName: "listRepos",
           connection: "github",
@@ -65,6 +66,9 @@ export const listReposTool = withGitHubConnection(
           errorMessage: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - start,
         });
+        if (error?.status === 401) {
+          throw new TokenVaultError("GitHub token expired or revoked");
+        }
         throw error;
       }
     },
@@ -125,7 +129,7 @@ export const getRepoFilesTool = withGitHubConnection(
         });
 
         return result;
-      } catch (error) {
+      } catch (error: any) {
         await auditToolCall({
           toolName: "getRepoFiles",
           connection: "github",
@@ -135,6 +139,9 @@ export const getRepoFilesTool = withGitHubConnection(
           errorMessage: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - start,
         });
+        if (error?.status === 401) {
+          throw new TokenVaultError("GitHub token expired or revoked");
+        }
         throw error;
       }
     },
@@ -185,7 +192,7 @@ export const searchCodeTool = withGitHubConnection(
         });
 
         return result;
-      } catch (error) {
+      } catch (error: any) {
         await auditToolCall({
           toolName: "searchCode",
           connection: "github",
@@ -195,6 +202,9 @@ export const searchCodeTool = withGitHubConnection(
           errorMessage: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - start,
         });
+        if (error?.status === 401) {
+          throw new TokenVaultError("GitHub token expired or revoked");
+        }
         throw error;
       }
     },

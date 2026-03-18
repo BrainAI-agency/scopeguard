@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod/v3";
 import { google } from "googleapis";
+import { TokenVaultError } from "@auth0/ai/interrupts";
 import { getAccessToken, withGmailConnection } from "../auth0-ai";
 import { auditToolCall } from "../audit-wrapper";
 
@@ -68,7 +69,7 @@ export const getInboxTool = withGmailConnection(
         });
 
         return { emails, totalCount: listResponse.data.resultSizeEstimate || 0 };
-      } catch (error) {
+      } catch (error: any) {
         await auditToolCall({
           toolName: "getInbox",
           connection: "google-oauth2",
@@ -78,6 +79,9 @@ export const getInboxTool = withGmailConnection(
           errorMessage: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - start,
         });
+        if (error?.status === 401) {
+          throw new TokenVaultError("Gmail token expired or revoked");
+        }
         throw error;
       }
     },
@@ -151,7 +155,7 @@ export const searchEmailsTool = withGmailConnection(
         });
 
         return { query, emails, totalResults: listResponse.data.resultSizeEstimate || 0 };
-      } catch (error) {
+      } catch (error: any) {
         await auditToolCall({
           toolName: "searchEmails",
           connection: "google-oauth2",
@@ -161,6 +165,9 @@ export const searchEmailsTool = withGmailConnection(
           errorMessage: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - start,
         });
+        if (error?.status === 401) {
+          throw new TokenVaultError("Gmail token expired or revoked");
+        }
         throw error;
       }
     },

@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { z } from "zod/v3";
 import { google } from "googleapis";
 import { startOfDay, endOfDay, formatISO } from "date-fns";
+import { TokenVaultError } from "@auth0/ai/interrupts";
 import { getAccessToken, withGoogleCalendarConnection } from "../auth0-ai";
 import { auditToolCall } from "../audit-wrapper";
 
@@ -65,7 +66,7 @@ export const getEventsTool = withGoogleCalendarConnection(
         });
 
         return result;
-      } catch (error) {
+      } catch (error: any) {
         await auditToolCall({
           toolName: "getCalendarEvents",
           connection: "google-oauth2",
@@ -75,6 +76,9 @@ export const getEventsTool = withGoogleCalendarConnection(
           errorMessage: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - start,
         });
+        if (error?.status === 401) {
+          throw new TokenVaultError("Google Calendar token expired or revoked");
+        }
         throw error;
       }
     },
@@ -129,7 +133,7 @@ export const checkAvailabilityTool = withGoogleCalendarConnection(
         });
 
         return result;
-      } catch (error) {
+      } catch (error: any) {
         await auditToolCall({
           toolName: "checkAvailability",
           connection: "google-oauth2",
@@ -140,6 +144,9 @@ export const checkAvailabilityTool = withGoogleCalendarConnection(
           errorMessage: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - start,
         });
+        if (error?.status === 401) {
+          throw new TokenVaultError("Google Calendar token expired or revoked");
+        }
         throw error;
       }
     },
