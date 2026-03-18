@@ -2,12 +2,12 @@ import { tool } from "ai";
 import { z } from "zod/v3";
 import { google } from "googleapis";
 import { TokenVaultError } from "@auth0/ai/interrupts";
-import { getAccessToken, withGmailConnection } from "../auth0-ai";
+import { getAccessToken, withGoogleConnection } from "../auth0-ai";
 import { auditToolCall } from "../audit-wrapper";
 
 const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
 
-export const getInboxTool = withGmailConnection(
+export const getInboxTool = withGoogleConnection(
   tool({
     description:
       "Get recent emails from the user's Gmail inbox. Returns sender, subject, snippet, and date.",
@@ -88,7 +88,7 @@ export const getInboxTool = withGmailConnection(
   })
 );
 
-export const searchEmailsTool = withGmailConnection(
+export const searchEmailsTool = withGoogleConnection(
   tool({
     description:
       "Search the user's Gmail for emails matching a query. Supports Gmail search syntax.",

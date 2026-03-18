@@ -21,19 +21,13 @@ export const withGitHubConnection = auth0AI.withTokenVault({
   refreshToken: getRefreshToken,
 });
 
-export const withGoogleCalendarConnection = auth0AI.withTokenVault({
+// Single Google connection requesting all scopes at once.
+// Calendar + Gmail both use google-oauth2 -- one consent prompt covers both.
+export const withGoogleConnection = auth0AI.withTokenVault({
   connection: "google-oauth2",
   scopes: [
     "openid",
     "https://www.googleapis.com/auth/calendar.readonly",
-  ],
-  refreshToken: getRefreshToken,
-});
-
-export const withGmailConnection = auth0AI.withTokenVault({
-  connection: "google-oauth2",
-  scopes: [
-    "openid",
     "https://www.googleapis.com/auth/gmail.readonly",
   ],
   refreshToken: getRefreshToken,

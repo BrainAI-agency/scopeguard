@@ -3,14 +3,14 @@ import { z } from "zod/v3";
 import { google } from "googleapis";
 import { startOfDay, endOfDay, formatISO } from "date-fns";
 import { TokenVaultError } from "@auth0/ai/interrupts";
-import { getAccessToken, withGoogleCalendarConnection } from "../auth0-ai";
+import { getAccessToken, withGoogleConnection } from "../auth0-ai";
 import { auditToolCall } from "../audit-wrapper";
 
 const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
 ];
 
-export const getEventsTool = withGoogleCalendarConnection(
+export const getEventsTool = withGoogleConnection(
   tool({
     description:
       "Get events from the user's Google Calendar for a specific date. Returns event titles, times, locations, and attendees.",
@@ -85,7 +85,7 @@ export const getEventsTool = withGoogleCalendarConnection(
   })
 );
 
-export const checkAvailabilityTool = withGoogleCalendarConnection(
+export const checkAvailabilityTool = withGoogleConnection(
   tool({
     description:
       "Check the user's availability on a specific date. Returns free/busy time slots.",
