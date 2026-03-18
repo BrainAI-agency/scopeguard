@@ -16,7 +16,6 @@ import { allTools } from "@/lib/tools";
 export async function POST(req: Request) {
   const { id, messages } = await req.json();
 
-  // Set thread context for Token Vault to track conversations
   setAIContext({ threadID: id });
 
   const tools = allTools;
@@ -28,28 +27,38 @@ export async function POST(req: Request) {
           model: bedrock("us.anthropic.claude-sonnet-4-6"),
           system: `You are ScopeGuard's AI assistant. You help users interact with their connected services (GitHub, Google Calendar, Gmail) through scoped, audited API access.
 
-IMPORTANT: When a user asks you to do something, ALWAYS call the appropriate tool immediately. Do not explain what you will do first. Do not ask for permission. Just call the tool. The authorization system will handle permissions automatically -- if the user hasn't connected a service yet, a consent prompt will appear for them.
+When a user asks you to do something, call the appropriate tool immediately. The authorization system handles permissions -- if the user hasn't connected a service, a consent prompt appears automatically.
 
 After a tool returns results, summarize them clearly. Every tool call is logged in the audit system.`,
           messages: await convertToModelMessages(messages),
           tools,
-          maxSteps: 5,
-          onStepFinish: (step) => {
-            // Intercept Token Vault interrupts BEFORE the model sees them as tool errors.
-            // Without this, streamText feeds the error back to the model as a tool-error,
-            // and the model generates a text fallback instead of triggering the consent flow.
-            for (const content of step.content ?? []) {
+          onFinish: (output) => {
+            console.log("[DEBUG-FIX] onFinish:", JSON.stringify({
+              finishReason: output.finishReason,
+              contentLen: output.content?.length,
+              contentTypes: output.content?.map((c: any) => c.type),
+              lastErrorType: output.content?.filter((c: any) => c.type === "tool-error").map((c: any) => ({
+                name: c.error?.constructor?.name,
+                isAuth0: c.error instanceof Auth0Interrupt,
+                msg: String(c.error).slice(0, 100),
+              })),
+            }));
+            if (output.finishReason === "tool-calls") {
+              const lastContent = output.content[output.content.length - 1];
               if (
-                "type" in content &&
-                content.type === "tool-error" &&
-                content.error instanceof Auth0Interrupt
+                lastContent &&
+                "type" in lastContent &&
+                lastContent.type === "tool-error"
               ) {
-                throw {
-                  cause: content.error,
-                  toolCallId: content.toolCallId,
-                  toolName: content.toolName,
-                  toolArgs: content.input,
-                };
+                const err = (lastContent as any).error;
+                if (err instanceof Auth0Interrupt) {
+                  throw {
+                    cause: err,
+                    toolCallId: (lastContent as any).toolCallId,
+                    toolName: (lastContent as any).toolName,
+                    toolArgs: (lastContent as any).input,
+                  };
+                }
               }
             }
           },
