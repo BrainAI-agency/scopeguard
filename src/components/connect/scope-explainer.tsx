@@ -32,13 +32,18 @@ const iconMap: Record<string, React.ElementType> = {
   mail: Mail,
 };
 
-const riskColors: Record<string, string> = {
-  low: "text-green-600",
-  medium: "text-yellow-600",
-  high: "text-red-600",
+const iconColors: Record<string, { bg: string; text: string }> = {
+  github: { bg: "from-gray-500/15 to-gray-600/15", text: "text-gray-700" },
+  calendar: { bg: "from-blue-500/15 to-indigo-500/15", text: "text-blue-600" },
+  mail: { bg: "from-red-500/15 to-rose-500/15", text: "text-red-600" },
 };
 
-// Map scope-metadata connection IDs to API connection names
+const riskConfig: Record<string, { color: string; bg: string }> = {
+  low: { color: "text-emerald-700", bg: "bg-emerald-100" },
+  medium: { color: "text-amber-700", bg: "bg-amber-100" },
+  high: { color: "text-red-700", bg: "bg-red-100" },
+};
+
 const connectionIdMap: Record<string, string> = {
   github: "github",
   "google-calendar": "google-oauth2",
@@ -110,8 +115,10 @@ export function ScopeExplainer() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
-        <Shield className="h-5 w-5 text-primary" />
+      <div className="flex items-center gap-3 rounded-xl border border-indigo-200/50 bg-gradient-to-r from-indigo-50/80 to-violet-50/80 p-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600">
+          <Shield className="h-4.5 w-4.5 text-white" />
+        </div>
         <p className="text-sm text-muted-foreground">
           Before connecting a service, review exactly what permissions the AI
           assistant will receive. All access is read-only. You can revoke at any
@@ -121,20 +128,23 @@ export function ScopeExplainer() {
 
       {connections.map((conn) => {
         const Icon = iconMap[conn.icon] || ExternalLink;
+        const colors = iconColors[conn.icon] || { bg: "from-indigo-500/15 to-violet-500/15", text: "text-indigo-600" };
         const state = getState(conn.id);
         const isConnected = state?.isConnected ?? false;
         const apiConnName = connectionIdMap[conn.id];
         const isRevoking = revoking === apiConnName;
 
         return (
-          <Card key={conn.id}>
+          <Card key={conn.id} className="border-0 shadow-md shadow-indigo-500/5">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Icon className="h-5 w-5" />
-                  {conn.name}
+                <span className="flex items-center gap-2.5">
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${colors.bg}`}>
+                    <Icon className={`h-4.5 w-4.5 ${colors.text}`} />
+                  </div>
+                  <span className="text-lg">{conn.name}</span>
                   {isConnected && (
-                    <Badge variant="default" className="ml-2">
+                    <Badge className="ml-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
                       Connected
                     </Badge>
                   )}
@@ -156,7 +166,11 @@ export function ScopeExplainer() {
                     )}
                   </Button>
                 ) : (
-                  <Button size="sm" onClick={() => router.push("/chat")}>
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:from-indigo-700 hover:to-violet-700"
+                    onClick={() => router.push("/chat")}
+                  >
                     Connect via Chat
                   </Button>
                 )}
@@ -174,65 +188,68 @@ export function ScopeExplainer() {
               )}
             </CardHeader>
             <CardContent className="space-y-6">
-              {conn.scopes.map((scope, idx) => (
-                <div key={scope.scope}>
-                  {idx > 0 && <Separator className="mb-6" />}
+              {conn.scopes.map((scope, idx) => {
+                const risk = riskConfig[scope.risk] || riskConfig.low;
+                return (
+                  <div key={scope.scope}>
+                    {idx > 0 && <Separator className="mb-6" />}
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="font-mono text-xs">
-                        {scope.scope}
-                      </Badge>
-                      <span className="font-medium">{scope.name}</span>
-                      <Badge
-                        variant="secondary"
-                        className={riskColors[scope.risk]}
-                      >
-                        {scope.risk} risk
-                      </Badge>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground">
-                      {scope.description}
-                    </p>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
-                          What the agent CAN do
-                        </p>
-                        <ul className="space-y-1">
-                          {scope.canDo.map((item) => (
-                            <li
-                              key={item}
-                              className="flex items-center gap-2 text-sm"
-                            >
-                              <Check className="h-3.5 w-3.5 text-green-600" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <Badge variant="outline" className="border-indigo-200/50 font-mono text-xs">
+                          {scope.scope}
+                        </Badge>
+                        <span className="font-medium">{scope.name}</span>
+                        <Badge
+                          variant="secondary"
+                          className={`${risk.bg} ${risk.color}`}
+                        >
+                          {scope.risk} risk
+                        </Badge>
                       </div>
-                      <div>
-                        <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
-                          What the agent CANNOT do
-                        </p>
-                        <ul className="space-y-1">
-                          {scope.cannotDo.map((item) => (
-                            <li
-                              key={item}
-                              className="flex items-center gap-2 text-sm"
-                            >
-                              <X className="h-3.5 w-3.5 text-red-500" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
+
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {scope.description}
+                      </p>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="rounded-lg border border-emerald-200/50 bg-emerald-50/50 p-4">
+                          <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-emerald-700">
+                            What the agent CAN do
+                          </p>
+                          <ul className="space-y-1.5">
+                            {scope.canDo.map((item) => (
+                              <li
+                                key={item}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="rounded-lg border border-red-200/50 bg-red-50/50 p-4">
+                          <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-red-700">
+                            What the agent CANNOT do
+                          </p>
+                          <ul className="space-y-1.5">
+                            {scope.cannotDo.map((item) => (
+                              <li
+                                key={item}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <X className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         );

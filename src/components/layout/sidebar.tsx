@@ -24,9 +24,11 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-card">
-      <div className="flex items-center gap-2 border-b px-6 py-4">
-        <Shield className="h-6 w-6 text-primary" />
-        <span className="text-lg font-semibold">ScopeGuard</span>
+      <div className="flex items-center gap-2.5 border-b px-6 py-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600">
+          <Shield className="h-4.5 w-4.5 text-white" />
+        </div>
+        <span className="text-lg font-semibold tracking-tight">ScopeGuard</span>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
@@ -37,9 +39,9 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm shadow-indigo-500/25"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >
@@ -53,7 +55,7 @@ export function Sidebar() {
       <div className="border-t px-3 py-4">
         <a
           href="/auth/logout"
-          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <LogOut className="h-4 w-4" />
           Sign Out

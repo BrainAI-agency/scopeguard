@@ -33,6 +33,12 @@ const iconMap: Record<string, React.ElementType> = {
   mail: Mail,
 };
 
+const iconColors: Record<string, { bg: string; text: string }> = {
+  github: { bg: "from-gray-500/15 to-gray-600/15", text: "text-gray-700" },
+  calendar: { bg: "from-blue-500/15 to-indigo-500/15", text: "text-blue-600" },
+  mail: { bg: "from-red-500/15 to-rose-500/15", text: "text-red-600" },
+};
+
 function formatTimestamp(iso: string): string {
   const date = new Date(iso);
   const now = new Date();
@@ -87,30 +93,36 @@ export function ConnectionCards() {
 
   return (
     <div>
-      <h2 className="mb-4 text-lg font-semibold">Connected Services</h2>
+      <h2 className="mb-4 text-lg font-semibold tracking-tight">Connected Services</h2>
       <div className="grid gap-4 md:grid-cols-3">
         {connections.map((conn) => {
           const Icon = iconMap[conn.icon] || ExternalLink;
+          const colors = iconColors[conn.icon] || { bg: "from-indigo-500/15 to-violet-500/15", text: "text-indigo-600" };
           const isRevoking = revoking === conn.connection;
 
           return (
-            <Card key={conn.id}>
+            <Card key={conn.id} className="border-0 shadow-md shadow-indigo-500/5 transition-all hover:shadow-lg hover:-translate-y-0.5">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
-                  <Icon className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2.5 text-base font-medium">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br ${colors.bg}`}>
+                    <Icon className={`h-4 w-4 ${colors.text}`} />
+                  </div>
                   {conn.provider}
                 </CardTitle>
-                <Badge variant={conn.isConnected ? "default" : "secondary"}>
+                <Badge
+                  variant={conn.isConnected ? "default" : "secondary"}
+                  className={conn.isConnected ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : ""}
+                >
                   {conn.isConnected ? "Connected" : "Not Connected"}
                 </Badge>
               </CardHeader>
               <CardContent>
-                <div className="mb-3 space-y-1">
+                <div className="mb-3 space-y-1.5">
                   {conn.scopes.map((scope) => (
                     <div key={scope.scope} className="flex items-center gap-2">
                       <Badge
                         variant="outline"
-                        className="text-xs font-normal"
+                        className="border-indigo-200/50 text-xs font-normal"
                       >
                         {scope.name}
                       </Badge>
@@ -148,7 +160,7 @@ export function ConnectionCards() {
                 ) : (
                   <Button
                     size="sm"
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:from-indigo-700 hover:to-violet-700"
                     onClick={() => router.push("/chat")}
                   >
                     Connect via Chat

@@ -11,6 +11,37 @@ interface AuditStats {
   connectionBreakdown: Record<string, number>;
 }
 
+const statConfig = [
+  {
+    key: "connections",
+    label: "Connected Services",
+    icon: Link2,
+    gradient: "from-blue-500/15 to-indigo-500/15",
+    iconColor: "text-blue-600",
+  },
+  {
+    key: "callsToday",
+    label: "API Calls Today",
+    icon: Activity,
+    gradient: "from-indigo-500/15 to-violet-500/15",
+    iconColor: "text-indigo-600",
+  },
+  {
+    key: "successRate",
+    label: "Success Rate",
+    icon: CheckCircle2,
+    gradient: "from-emerald-500/15 to-teal-500/15",
+    iconColor: "text-emerald-600",
+  },
+  {
+    key: "total",
+    label: "Total Actions",
+    icon: Shield,
+    gradient: "from-violet-500/15 to-purple-500/15",
+    iconColor: "text-violet-600",
+  },
+];
+
 export function StatsBar() {
   const [stats, setStats] = useState<AuditStats | null>(null);
 
@@ -36,39 +67,23 @@ export function StatsBar() {
     ? Object.keys(stats.connectionBreakdown).length
     : 0;
 
-  const items = [
-    {
-      label: "Connected Services",
-      value: String(activeConnections),
-      icon: Link2,
-    },
-    {
-      label: "API Calls Today",
-      value: String(stats?.callsToday ?? 0),
-      icon: Activity,
-    },
-    {
-      label: "Success Rate",
-      value: `${stats?.successRate ?? 100}%`,
-      icon: CheckCircle2,
-    },
-    {
-      label: "Total Actions",
-      value: String(stats?.totalCalls ?? 0),
-      icon: Shield,
-    },
-  ];
+  const values: Record<string, string> = {
+    connections: String(activeConnections),
+    callsToday: String(stats?.callsToday ?? 0),
+    successRate: `${stats?.successRate ?? 100}%`,
+    total: String(stats?.totalCalls ?? 0),
+  };
 
   return (
     <div className="grid gap-4 md:grid-cols-4">
-      {items.map((stat) => (
-        <Card key={stat.label}>
+      {statConfig.map((stat) => (
+        <Card key={stat.key} className="border-0 shadow-md shadow-indigo-500/5 transition-shadow hover:shadow-lg">
           <CardContent className="flex items-center gap-4 pt-6">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <stat.icon className="h-5 w-5 text-primary" />
+            <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${stat.gradient}`}>
+              <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
             </div>
             <div>
-              <p className="text-2xl font-bold">{stat.value}</p>
+              <p className="text-2xl font-bold tracking-tight">{values[stat.key]}</p>
               <p className="text-xs text-muted-foreground">{stat.label}</p>
             </div>
           </CardContent>

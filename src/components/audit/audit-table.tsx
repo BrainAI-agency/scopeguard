@@ -38,7 +38,7 @@ export function AuditTable() {
         setEntries(data.entries ?? []);
       }
     } catch {
-      // Silent fail -- empty state handles it
+      // Silent fail
     } finally {
       setLoading(false);
     }
@@ -46,16 +46,15 @@ export function AuditTable() {
 
   useEffect(() => {
     fetchEntries();
-    // Poll every 5 seconds for live updates
     const interval = setInterval(fetchEntries, 5000);
     return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-0 shadow-md shadow-indigo-500/5">
         <CardContent className="py-16 text-center">
-          <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin text-muted-foreground" />
+          <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin text-indigo-500" />
           <p className="text-sm text-muted-foreground">Loading audit log...</p>
         </CardContent>
       </Card>
@@ -64,18 +63,20 @@ export function AuditTable() {
 
   if (entries.length === 0) {
     return (
-      <Card>
+      <Card className="border-0 shadow-md shadow-indigo-500/5">
         <CardContent className="py-16 text-center">
-          <ScrollText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/15 to-violet-500/15">
+            <ScrollText className="h-8 w-8 text-indigo-600" />
+          </div>
           <h3 className="text-lg font-semibold">No audit entries yet</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
             When the AI assistant accesses your connected services, every action
             will be logged here.
           </p>
           <Button
             variant="outline"
             size="sm"
-            className="mt-4"
+            className="mt-4 border-indigo-200/50"
             onClick={fetchEntries}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -87,9 +88,9 @@ export function AuditTable() {
   }
 
   return (
-    <Card>
+    <Card className="border-0 shadow-md shadow-indigo-500/5">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between border-b px-4 py-2">
+        <div className="flex items-center justify-between border-b px-4 py-3">
           <span className="text-sm text-muted-foreground">
             {entries.length} action{entries.length !== 1 ? "s" : ""} logged
           </span>
@@ -100,34 +101,35 @@ export function AuditTable() {
         </div>
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Time</TableHead>
-              <TableHead>Tool</TableHead>
-              <TableHead>API Endpoint</TableHead>
-              <TableHead>Service</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Status</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Time</TableHead>
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Tool</TableHead>
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">API Endpoint</TableHead>
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Service</TableHead>
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Duration</TableHead>
+              <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {entries.map((entry) => (
-              <TableRow key={entry.id}>
+              <TableRow key={entry.id} className="transition-colors hover:bg-indigo-50/30">
                 <TableCell className="text-xs text-muted-foreground">
                   {new Date(entry.createdAt).toLocaleTimeString()}
                 </TableCell>
                 <TableCell className="font-medium">{entry.toolName}</TableCell>
-                <TableCell className="max-w-[200px] truncate font-mono text-xs">
+                <TableCell className="max-w-[200px] truncate font-mono text-xs text-muted-foreground">
                   {entry.apiEndpoint}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{entry.connection}</Badge>
+                  <Badge variant="outline" className="border-indigo-200/50">{entry.connection}</Badge>
                 </TableCell>
-                <TableCell className="text-xs">{entry.durationMs}ms</TableCell>
+                <TableCell className="tabular-nums text-xs">{entry.durationMs}ms</TableCell>
                 <TableCell>
                   <Badge
                     variant={
                       entry.status === "success" ? "default" : "destructive"
                     }
+                    className={entry.status === "success" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : ""}
                   >
                     {entry.status}
                   </Badge>
