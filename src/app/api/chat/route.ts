@@ -52,9 +52,6 @@ After a tool returns results, summarize them clearly. Every tool call is logged 
                     "AUTH0_AI_INTERRUPT"
                   ));
               if (isAuth0) {
-                console.log(
-                  "[ScopeGuard] Token Vault interrupt, throwing for consent flow"
-                );
                 throw {
                   cause: err,
                   toolCallId: (content as any).toolCallId,
